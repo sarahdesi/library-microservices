@@ -1,32 +1,63 @@
-# React + TypeScript + Vite
+# Frontend — Biblioteca Universitária
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Web interface for the university library system. It talks only to the API Gateway; see the [root README](../README.md) for the full architecture.
 
-Currently, two official plugins are available:
+**Stack:** React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router, TanStack Query, react-hook-form + zod, sonner and lucide-react.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Configuration
 
-## React Compiler
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:8080` | API Gateway URL, as seen by the browser |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Copy `.env.example` to `.env` to change it. Vite embeds the value at build time.
 
-## Expanding the Oxlint configuration
+## Development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Requires Node.js 22 and the backend running (gateway on port 8080).
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev       # http://localhost:5173
+npm run build     # type-check and production build
+npm run lint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Docker
+
+The `Dockerfile` builds the app with `node:22-alpine` and serves `dist/` with nginx on port 3000. `nginx.conf` falls back to `index.html`, so reloading a route like `/usuarios/1` works.
+
+From the repository root:
+
+```bash
+docker compose up --build frontend
+```
+
+Or on its own:
+
+```bash
+docker build --build-arg VITE_API_URL=http://localhost:8080 -t library-frontend .
+docker run -p 3000:3000 library-frontend
+```
+
+`VITE_API_URL` stays `http://localhost:8080` inside Docker because the code runs in the user's browser, not in the container.
+
+## Structure
+
+```
+src/
+├── api/          HTTP client and one module per resource (books, users, loans, fines)
+├── types/        TypeScript types mirroring the backend DTOs
+├── components/   ui/ (shadcn), layout/ (sidebar) and feature components
+├── hooks/        shared data hooks (loan actions, books lookup, debounce)
+├── lib/          formatting, enum labels, error translation, business rules
+├── pages/        BooksPage, UsersPage, UserDetailPage, LoansPage
+└── App.tsx       routes
+```
+
+| Route | Page |
+|---|---|
+| `/livros` | Books: list, search, create, edit, delete |
+| `/usuarios` | Users: list, create, edit |
+| `/usuarios/:id` | User detail: rules, pending alert, loan history, fines |
+| `/emprestimos` | Loans: new loan, return and renew per user |
