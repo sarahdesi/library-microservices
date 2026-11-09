@@ -44,7 +44,7 @@ public class LoanService {
         //RN03: limite de livros ao mesmo tempo, por tipo de usuario
         long activeLoans = loanRepository.countByUserIdAndStatus(user.id(), LoanStatus.ACTIVE);
         if (activeLoans >= policy.getMaxBooks()) {
-            throw new BusinessException("Loan limit reached(" + policy.getMaxBooks() + "books)");
+            throw new BusinessException("Loan limit reached (" + policy.getMaxBooks() + " books)");
         }
 
         //RN09: nao pode pegar dois exemplares do mesmo livro
@@ -102,12 +102,12 @@ public class LoanService {
     public LoanResponse renew(Long loanId) {
         Loan loan = getLoan(loanId);
         if (loan.getStatus() == LoanStatus.RETURNED) {
-            throw new BusinessException("Returned loans connot be renewed");
+            throw new BusinessException("Returned loans cannot be renewed");
         }
 
         //RN06: emprestimo atrasado nao pode ser renovado
         if (loan.isOverdue()) {
-            throw new BusinessException("Overdue loans connot be renewed");
+            throw new BusinessException("Overdue loans cannot be renewed");
         }
 
         UserData user = userClient.getUser(loan.getUserId());
