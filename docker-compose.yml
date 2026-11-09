@@ -71,6 +71,16 @@ services:
     depends_on:
       - service-registry
 
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+
 volumes:
   mariadb-data:
   mongo-data:
