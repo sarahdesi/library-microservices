@@ -3,12 +3,10 @@ services:
   mariadb:
     image: mariadb:11
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?defina MARIADB_ROOT_PASSWORD no arquivo .env}
-    ports:
-      - "3307:3306"
+      MARIADB_ROOT_PASSWORD: root
     volumes:
       - mariadb-data:/var/lib/mysql
-      - ./docs/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
@@ -17,10 +15,61 @@ services:
 
   mongodb:
     image: mongo
-    ports:
-      - "27018:27017"
     volumes:
       - mongo-data:/data/db
+
+  service-registry:
+    build: ./service-registry
+    ports:
+      - "8761:8761"
+
+  user-service:
+    build: ./user-service
+    environment:
+      DB_URL: jdbc:mariadb://mariadb:3306/user_service
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://service-registry:8761/eureka/
+      EUREKA_HOSTNAME: user-service
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
+
+  catalog-service:
+    build: ./catalog-service
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/catalog_service
+      EUREKA_URL: http://service-registry:8761/eureka/
+      EUREKA_HOSTNAME: catalog-service
+    depends_on:
+      - mongodb
+      - service-registry
+
+  loan-service:
+    build: ./loan-service
+    environment:
+      DB_URL: jdbc:mariadb://mariadb:3306/loan_service
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://service-registry:8761/eureka/
+      EUREKA_HOSTNAME: loan-service
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_URL: http://service-registry:8761/eureka/
+      EUREKA_HOSTNAME: api-gateway
+    depends_on:
+      - service-registry
 
 volumes:
   mariadb-data:
