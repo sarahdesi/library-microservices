@@ -35,10 +35,12 @@ async function parseError(response: Response): Promise<ApiError> {
   }
 
   if (body && typeof body === "object") {
-    const { status, error, details } = body as Record<string, unknown>
+    // Services send the text in "message"; the gateway's own errors use "error"
+    const { status, message, error, details } = body as Record<string, unknown>
+    const text = typeof message === "string" && message ? message : typeof error === "string" ? error : response.statusText
     return new ApiError(
       typeof status === "number" ? status : response.status,
-      typeof error === "string" ? error : response.statusText,
+      text,
       Array.isArray(details) ? details.filter((d): d is string => typeof d === "string") : [],
     )
   }

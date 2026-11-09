@@ -107,8 +107,10 @@ Todas as rotas passam pelo gateway em `http://localhost:8080`.
 Os três serviços respondem os erros no mesmo formato:
 
 ```json
-{ "status": 400, "error": "Validation failed", "details": ["email: Email must be valid"] }
+{ "status": 400, "message": "Validation failed", "details": ["email: Email must be valid"] }
 ```
+
+Quando o próprio gateway falha (por exemplo, um serviço fora do ar), a resposta segue o formato padrão do Spring, com o texto no campo `error`.
 
 ## Como executar
 

@@ -1,7 +1,7 @@
 /** Error body returned by user-service, catalog-service and loan-service */
 export type ApiErrorResponse = {
   status: number
-  error: string
+  message: string
   /** validation errors as "field: message" (empty otherwise) */
   details: string[]
 }
