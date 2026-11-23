@@ -3,6 +3,7 @@ package com.library.user_service.controller;
 
 import com.library.user_service.dtos.UserRequest;
 import com.library.user_service.dtos.UserResponse;
+import com.library.user_service.dtos.UserUpdateRequest;
 import com.library.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class UserController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> uodate(@PathVariable Long id, @Valid @RequestBody UserRequest request){
+    public ResponseEntity<UserResponse> update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request){
         return ResponseEntity.ok(userService.update(id, request));
     }
 

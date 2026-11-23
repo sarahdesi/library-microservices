@@ -258,6 +258,26 @@ class AuthTests {
         assertThat(saved.getPassword()).isNull();
     }
 
+    @Test
+    void editingWithoutCpfKeepsTheCurrentOne() throws Exception {
+        String cpf = cpf();
+        long id = json.readTree(post("/users", counterUser(email(), cpf, "STUDENT")).body()).get("id").asLong();
+
+        HttpResponse<String> response = put("/users/" + id, """
+                {"name":"Novo nome","email":"%s","type":"TEACHER"}
+                """.formatted(email()));
+
+        assertThat(response.statusCode()).as(response.body()).isEqualTo(200);
+        User saved = userRepository.findById(id).orElseThrow();
+        assertThat(saved.getCpf()).isEqualTo(cpf);
+        assertThat(saved.getName()).isEqualTo("Novo nome");
+
+        HttpResponse<String> invalidCpf = put("/users/" + id, """
+                {"name":"Novo nome","email":"%s","type":"TEACHER","cpf":"123"}
+                """.formatted(saved.getEmail()));
+        assertThat(invalidCpf.statusCode()).isEqualTo(400);
+    }
+
     // ---------- helpers ----------
 
     private Jwt decode(String token) {
@@ -291,6 +311,13 @@ class AuthTests {
         return post("/auth/login", """
                 {"email":"%s","password":"%s"}
                 """.formatted(email, password));
+    }
+
+    private HttpResponse<String> put(String path, String body) throws Exception {
+        return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                        .header("Content-Type", "application/json")
+                        .PUT(HttpRequest.BodyPublishers.ofString(body)).build(),
+                HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(String path, String body) throws Exception {

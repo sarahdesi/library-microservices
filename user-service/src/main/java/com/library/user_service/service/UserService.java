@@ -2,6 +2,7 @@ package com.library.user_service.service;
 
 import com.library.user_service.dtos.UserRequest;
 import com.library.user_service.dtos.UserResponse;
+import com.library.user_service.dtos.UserUpdateRequest;
 import com.library.user_service.exception.BusinessException;
 import com.library.user_service.exception.ConflictException;
 import com.library.user_service.exception.ResourceNotFoundException;
@@ -46,19 +47,21 @@ public class UserService {
         return UserResponse.from(getUser(id));
     }
 
-    public UserResponse update(Long id, UserRequest request) {
+    public UserResponse update(Long id, UserUpdateRequest request) {
         User user = getUser(id);
         boolean emailChanged = !user.getEmail().equals(request.email());
         if (emailChanged && userRepository.existsByEmail(request.email())) {
             throw new BusinessException("Email already registered");
         }
-        boolean cpfChanged = !request.cpf().equals(user.getCpf());
-        if (cpfChanged && userRepository.existsByCpf(request.cpf())) {
+        boolean cpfInformed = request.cpf() != null && !request.cpf().isBlank();
+        if (cpfInformed && !request.cpf().equals(user.getCpf()) && userRepository.existsByCpf(request.cpf())) {
             throw new ConflictException("CPF already registered");
         }
         user.setName(request.name());
         user.setEmail(request.email());
-        user.setCpf(request.cpf());
+        if (cpfInformed) {
+            user.setCpf(request.cpf());
+        }
         // A bibliotecaria nao tem tipo (nao toma emprestimos)
         if (user.getRole() != Role.LIBRARIAN) {
             user.setType(request.type());
