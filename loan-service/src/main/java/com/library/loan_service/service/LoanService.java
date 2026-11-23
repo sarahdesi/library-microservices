@@ -13,6 +13,7 @@ import com.library.loan_service.model.LoanStatus;
 import com.library.loan_service.repository.FineRepository;
 import com.library.loan_service.repository.LoanRepository;
 import com.library.loan_service.repository.UserLoanLockRepository;
+import com.library.loan_service.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,10 @@ public class LoanService {
 
     public LoanResponse create(LoanRequest request) {
         UserData user = userClient.getUser(request.userId());
+        // The librarian is a user without type: she runs the counter, she does not borrow
+        if (user.type() == null) {
+            throw new BusinessException("Only members can borrow books");
+        }
         LoanPolicy policy = LoanPolicy.fromUserType(user.type());
 
         userLoanLockRepository.ensureExists(user.id());
@@ -132,10 +137,12 @@ public class LoanService {
         }
     }
 
-    public LoanResponse renew(Long loanId) {
+    public LoanResponse renew(Long loanId, CurrentUser currentUser) {
         return transactionTemplate.execute(status -> {
             // Waits for a concurrent return/renewal, so it never works on a stale loan
             Loan loan = getLoanForUpdate(loanId);
+            // A member renews only their own loans; the librarian renews any
+            currentUser.requireAccessTo(loan.getUserId());
             if (loan.getStatus() == LoanStatus.RETURNED) {
                 throw new BusinessException("Returned loans cannot be renewed");
             }

@@ -26,6 +26,7 @@ const exactMessages: Record<string, string> = {
   "Registration number already registered": "Esta matrícula ou MASP já possui cadastro.",
   "University affiliation is no longer active": "Seu vínculo com a universidade não está ativo. Procure a biblioteca.",
   "Access denied": "Você não tem permissão para esta ação.",
+  "Only members can borrow books": "Só membros (alunos, professores e externos) podem tomar livros emprestados.",
   "Authentication required": "Sua sessão expirou. Entre novamente.",
 }
 

@@ -77,7 +77,7 @@ class LoanConcurrencyTests {
         fineRepository.deleteAll();
         loanRepository.deleteAll();
         when(userClient.getUser(anyLong()))
-                .thenAnswer(inv -> new UserData(inv.getArgument(0), "User", "user@test.com", "STUDENT"));
+                .thenAnswer(inv -> new UserData(inv.getArgument(0), "User", "user@test.com", "STUDENT", "MEMBER"));
         doAnswer(inv -> {
             Thread.sleep(20);
             return null;
