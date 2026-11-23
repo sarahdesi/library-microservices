@@ -46,7 +46,8 @@ public class HttpUniversityRegistry implements UniversityRegistry {
         } catch (HttpClientErrorException.NotFound e) {
             // unknown, inactive or CPF that does not match: the registry does not say which
             return Optional.empty();
-        } catch (RestClientException e) {
+        } catch (RestClientException | IllegalStateException e) {
+            // IllegalStateException: the load balancer has no instance registered in Eureka
             throw new UniversityRegistryUnavailableException(e);
         }
     }

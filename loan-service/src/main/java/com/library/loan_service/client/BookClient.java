@@ -35,7 +35,8 @@ public class BookClient {
             throw new ResourceNotFoundException("Book not found");
         } catch (HttpClientErrorException.BadRequest e){
             throw new BusinessException(catalogMessage(e));
-        } catch (RestClientException e){
+        } catch (RestClientException | IllegalStateException e){
+            // IllegalStateException: the load balancer has no instance registered in Eureka
             throw new ServiceUnavailableException("Catalog service unavailable");
         }
     }

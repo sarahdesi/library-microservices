@@ -23,7 +23,8 @@ public class UserClient {
                     .body(UserData.class);
         } catch (HttpClientErrorException.NotFound e) {
             throw new ResourceNotFoundException("User not found");
-        } catch (RestClientException e) {
+        } catch (RestClientException | IllegalStateException e) {
+            // IllegalStateException: the load balancer has no instance registered in Eureka
             throw new ServiceUnavailableException("User service unavailable");
         }
     }
