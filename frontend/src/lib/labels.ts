@@ -1,5 +1,5 @@
 import type { LoanStatus } from "@/types/loan"
-import type { UserType } from "@/types/user"
+import type { Role, UserType } from "@/types/user"
 
 export const userTypeLabels: Record<UserType, string> = {
   STUDENT: "Aluno",
@@ -13,3 +13,8 @@ export const loanStatusLabels: Record<LoanStatus, string> = {
 }
 
 export const OVERDUE_LABEL = "Atrasado"
+
+export const roleLabels: Record<Role, string> = {
+  MEMBER: "Membro",
+  LIBRARIAN: "Bibliotecária",
+}

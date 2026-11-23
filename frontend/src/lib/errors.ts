@@ -19,6 +19,14 @@ const exactMessages: Record<string, string> = {
   "Validation failed": "Verifique os campos do formulário.",
   "User service unavailable": "O serviço de usuários está indisponível.",
   "Catalog service unavailable": "O serviço de catálogo está indisponível.",
+  "CPF already registered": "Este CPF já está cadastrado.",
+  "Invalid credentials": "E-mail ou senha incorretos.",
+  "University data does not match": "Os dados informados não conferem com os registros da universidade.",
+  "University registry unavailable": "Não foi possível consultar a base da universidade. Tente novamente em instantes.",
+  "Registration number already registered": "Esta matrícula ou MASP já possui cadastro.",
+  "University affiliation is no longer active": "Seu vínculo com a universidade não está ativo. Procure a biblioteca.",
+  "Access denied": "Você não tem permissão para esta ação.",
+  "Authentication required": "Sua sessão expirou. Entre novamente.",
 }
 
 /** Messages carrying a number, recognized by their beginning */
