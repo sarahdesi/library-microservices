@@ -40,6 +40,12 @@ public class Loan {
     @Column(nullable = false)
     private LoanStatus status;
 
+    // Optimistic lock: an update based on a stale read fails instead of overwriting.
+    // The default fills existing rows when ddl-auto adds the column.
+    @Version
+    @Column(columnDefinition = "bigint not null default 0")
+    private long version;
+
     public boolean isOverdue(){
         return status == LoanStatus.ACTIVE && LocalDate.now().isAfter(dueDate);
     }

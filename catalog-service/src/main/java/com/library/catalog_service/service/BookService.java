@@ -7,6 +7,14 @@ import com.library.catalog_service.exception.BusinessException;
 import com.library.catalog_service.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import com.library.catalog_service.model.Book;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.AggregationUpdate;
+import org.springframework.data.mongodb.core.aggregation.ArithmeticOperators;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import com.library.catalog_service.repository.BookRepository;
 
@@ -17,6 +25,7 @@ import java.util.List;
 public class BookService {
 
     private final BookRepository bookRepository;
+    private final MongoTemplate mongoTemplate;
 
     public BookResponse create(com.library.catalog_service.dto.BookRequest request) {
         if (bookRepository.existsByIsbn(request.isbn())) {
@@ -66,41 +75,72 @@ public class BookService {
             throw new BusinessException("ISBN already registered");
         }
 
-        int loanedCopies = book.getTotalCopies() - book.getAvailableCopies();
-        if (request.totalCopies() < loanedCopies) {
+        // Atomic: only matches while copies on loan (total - available) fit in the new total,
+        // and recomputes availableCopies from the values stored at the moment of the update,
+        // so a loan or return happening at the same time is not overwritten.
+        Query query = new Query(new Criteria().andOperator(
+                Criteria.where("id").is(id),
+                Criteria.expr(ComparisonOperators.Lte
+                        .valueOf(ArithmeticOperators.Subtract.valueOf("totalCopies").subtract("availableCopies"))
+                        .lessThanEqualToValue(request.totalCopies()))));
+        // availableCopies must be set before totalCopies (each set is a pipeline stage)
+        AggregationUpdate update = AggregationUpdate.update()
+                .set("availableCopies").toValue(ArithmeticOperators.Subtract
+                        .valueOf(ArithmeticOperators.Add.valueOf("availableCopies").add(request.totalCopies()))
+                        .subtract("totalCopies"))
+                .set("totalCopies").toValue(request.totalCopies())
+                .set("title").toValue(request.title())
+                .set("author").toValue(request.author())
+                .set("category").toValue(request.category())
+                .set("isbn").toValue(request.isbn());
+
+        Book updated = mongoTemplate.findAndModify(query, update,
+                FindAndModifyOptions.options().returnNew(true), Book.class);
+        if (updated == null) {
+            Book current = getBook(id);
+            int loanedCopies = current.getTotalCopies() - current.getAvailableCopies();
             throw new BusinessException("Total copies cannot be less than copies on loan (" + loanedCopies + ")");
         }
-
-        book.setTitle(request.title());
-        book.setAuthor(request.author());
-        book.setCategory(request.category());
-        book.setIsbn(request.isbn());
-        book.setTotalCopies(request.totalCopies());
-        book.setAvailableCopies(request.totalCopies() - loanedCopies);
-        return BookResponse.from(bookRepository.save(book));
+        return BookResponse.from(updated);
     }
 
     public void delete(String id) {
-        Book book = getBook(id);
-        if (book.getAvailableCopies() < book.getTotalCopies()) {
+        // Atomic: only removes the book while no copy is on loan
+        Query query = new Query(new Criteria().andOperator(
+                Criteria.where("id").is(id),
+                Criteria.expr(ComparisonOperators.Eq.valueOf("availableCopies").equalTo("totalCopies"))));
+        if (mongoTemplate.remove(query, Book.class).getDeletedCount() == 0) {
+            getBook(id);
             throw new BusinessException("Cannot delete a book with copies on loan");
         }
-        bookRepository.delete(book);
     }
 
+    /**
+     * Atomic conditional increment: the filter and the $inc run as one operation in MongoDB,
+     * so concurrent requests can never take availableCopies below 0 or above totalCopies.
+     */
     public BookResponse changeAvailability(String id, AvailabilityRequest request) {
-        Book book = getBook(id);
-        int newAvailable = book.getAvailableCopies() + request.change();
-
-        if (newAvailable < 0) {
-            throw new BusinessException("No copies available");
-        }
-        if (newAvailable > book.getTotalCopies()) {
-            throw new BusinessException("Available copies cannot exceed total copies");
+        int change = request.change();
+        if (change == 0) {
+            return findById(id);
         }
 
-        book.setAvailableCopies(newAvailable);
-        return BookResponse.from(bookRepository.save(book));
+        Criteria limit = change < 0
+                ? Criteria.where("availableCopies").gte(-change)
+                : Criteria.expr(ComparisonOperators.Lte
+                        .valueOf(ArithmeticOperators.Add.valueOf("availableCopies").add(change))
+                        .lessThanEqualTo("totalCopies"));
+        Query query = new Query(new Criteria().andOperator(Criteria.where("id").is(id), limit));
+
+        Book updated = mongoTemplate.findAndModify(query, new Update().inc("availableCopies", change),
+                FindAndModifyOptions.options().returnNew(true), Book.class);
+        if (updated == null) {
+            getBook(id);
+            throw new BusinessException(change < 0
+                    ? "No copies available"
+                    : "Available copies cannot exceed total copies");
+        }
+        return BookResponse.from(updated);
     }
 
     private Book getBook(String id) {
