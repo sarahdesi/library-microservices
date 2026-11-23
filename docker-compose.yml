@@ -31,6 +31,9 @@ services:
       DB_PASSWORD: root
       EUREKA_URL: http://service-registry:8761/eureka/
       EUREKA_HOSTNAME: user-service
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env da raiz (veja .env.example)}
+      LIBRARIAN_EMAIL: ${LIBRARIAN_EMAIL:-}
+      LIBRARIAN_PASSWORD: ${LIBRARIAN_PASSWORD:-}
     depends_on:
       mariadb:
         condition: service_healthy
