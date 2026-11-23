@@ -3,6 +3,7 @@ package com.library.user_service.controller;
 import com.library.user_service.dtos.LoginRequest;
 import com.library.user_service.dtos.LoginResponse;
 import com.library.user_service.dtos.RegisterExternalRequest;
+import com.library.user_service.dtos.RegisterUniversityRequest;
 import com.library.user_service.dtos.UserResponse;
 import com.library.user_service.service.AuthService;
 import jakarta.validation.Valid;
@@ -29,5 +30,15 @@ public class AuthController {
     @PostMapping("/register/external")
     public ResponseEntity<UserResponse> registerExternal(@Valid @RequestBody RegisterExternalRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerExternal(request));
+    }
+
+    @PostMapping("/register/student")
+    public ResponseEntity<UserResponse> registerStudent(@Valid @RequestBody RegisterUniversityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerStudent(request));
+    }
+
+    @PostMapping("/register/teacher")
+    public ResponseEntity<UserResponse> registerTeacher(@Valid @RequestBody RegisterUniversityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerTeacher(request));
     }
 }

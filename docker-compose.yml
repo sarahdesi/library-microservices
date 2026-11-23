@@ -40,6 +40,21 @@ services:
       service-registry:
         condition: service_started
 
+  # Simula o sistema academico da universidade. Sem porta publicada: so o user-service o chama.
+  university-service:
+    build: ./university-service
+    environment:
+      DB_URL: jdbc:mariadb://mariadb:3306/university_service?createDatabaseIfNotExist=true
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://service-registry:8761/eureka/
+      EUREKA_HOSTNAME: university-service
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      service-registry:
+        condition: service_started
+
   catalog-service:
     build: ./catalog-service
     environment:

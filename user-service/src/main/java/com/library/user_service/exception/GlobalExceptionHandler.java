@@ -1,5 +1,6 @@
 package com.library.user_service.exception;
 
+import com.library.user_service.university.UniversityRegistryUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,6 +34,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException ex) {
         ErrorResponse body = new ErrorResponse(401, ex.getMessage(), List.of());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
+        ErrorResponse body = new ErrorResponse(403, ex.getMessage(), List.of());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(UniversityRegistryUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleRegistryUnavailable(UniversityRegistryUnavailableException ex) {
+        ErrorResponse body = new ErrorResponse(503, ex.getMessage(), List.of());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
