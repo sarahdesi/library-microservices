@@ -86,6 +86,7 @@ services:
     environment:
       EUREKA_URL: http://service-registry:8761/eureka/
       EUREKA_HOSTNAME: api-gateway
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env da raiz (veja .env.example)}
     depends_on:
       - service-registry
 
