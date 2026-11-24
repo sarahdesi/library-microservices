@@ -13,9 +13,11 @@ type LoansTableProps = {
   booksById: Map<string, Book>
   /** Renewal limit for the user's type, shown as "1 de 5" */
   maxRenewals?: number
+  /** "counter": return and renew (librarian). "member": renew only, the return happens at the counter. */
+  mode?: "counter" | "member"
 }
 
-export function LoansTable({ loans, booksById, maxRenewals }: LoansTableProps) {
+export function LoansTable({ loans, booksById, maxRenewals, mode = "counter" }: LoansTableProps) {
   const { returnLoan, renewLoan, busyLoanId } = useLoanActions()
 
   return (
@@ -81,9 +83,11 @@ export function LoansTable({ loans, booksById, maxRenewals }: LoansTableProps) {
                     <Button variant="outline" size="sm" disabled={isBusy} onClick={() => renewLoan(loan)}>
                       Renovar
                     </Button>
-                    <Button variant="outline" size="sm" disabled={isBusy} onClick={() => returnLoan(loan)}>
-                      Devolver
-                    </Button>
+                    {mode === "counter" && (
+                      <Button variant="outline" size="sm" disabled={isBusy} onClick={() => returnLoan(loan)}>
+                        Devolver
+                      </Button>
+                    )}
                   </div>
                 )}
               </TableCell>

@@ -23,7 +23,7 @@ user-service ──(Eureka, rede interna)──→ university-service :8084 (Mar
 | `catalog-service` | 8082 | Catálogo de livros, busca e controle de exemplares disponíveis | MongoDB `catalog_service` |
 | `loan-service` | 8083 | Empréstimos, devoluções, renovações e multas | MariaDB `loan_service` |
 | `university-service` | 8084 | Simula o sistema acadêmico: bases de alunos (matrícula) e professores (MASP) | MariaDB `university_service` |
-| `frontend` | 3000 (Docker) / 5173 (dev) | Interface web da bibliotecária | — |
+| `frontend` | 3000 (Docker) / 5173 (dev) | Interface web: balcão da bibliotecária e área do membro, com login | — |
 
 - O frontend fala **somente com o gateway**. O gateway usa `lb://NOME-DO-SERVICO` e descobre o endereço de cada serviço pelo Eureka.
 - O `loan-service` consulta o `user-service` e o `catalog-service` para validar o usuário e o livro, e pede ao catálogo que atualize a disponibilidade quando um livro é emprestado ou devolvido.
@@ -234,7 +234,8 @@ Para simular que alguém se formou: `UPDATE university_service.university_studen
    UPDATE loan_service.loans SET due_date = '2026-01-01' WHERE id = 1;
    ```
    A multa aparece no detalhe do usuário, onde pode ser paga.
-6. Cadastrar-se como aluno com a matrícula `2024001` e o CPF `11111111111`, entrar e conferir que só aparecem os próprios dados. Tentar com a matrícula inativa `2019050` e ver o erro de dados que não conferem.
+6. Sair e, em **Criar conta**, cadastrar-se como aluno com a matrícula `2024001` e o CPF `11111111111`. Entrar e conferir que o menu mostra só **Catálogo** e **Minha conta** e que o nome veio da universidade. Tentar com a matrícula inativa `2019050` e ver o erro de dados que não conferem.
+7. Como bibliotecária, emprestar um livro para esse aluno. Como aluno, renovar o empréstimo em **Minha conta**; tentar abrir `/usuarios` e ver o bloqueio.
 
 ## Testes
 

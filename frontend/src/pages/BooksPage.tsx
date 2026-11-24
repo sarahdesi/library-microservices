@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useBooksById } from "@/hooks/useBooksById"
+import { useCurrentUser } from "@/hooks/useAuth"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { plural } from "@/lib/format"
 import { queryKeys } from "@/lib/queryKeys"
@@ -41,6 +42,8 @@ function CatalogSummary({ books }: { books: Book[] }) {
 }
 
 export function BooksPage() {
+  // Members see the catalog read-only: no create, edit or delete (the gateway refuses them anyway)
+  const canManage = useCurrentUser().role === "LIBRARIAN"
   const [searchField, setSearchField] = useState<BookSearchField>("title")
   const [searchText, setSearchText] = useState("")
   const term = useDebouncedValue(searchText.trim())
@@ -73,10 +76,14 @@ export function BooksPage() {
   return (
     <>
       <PageHeader
-        title="Livros"
-        description="Acervo da biblioteca e exemplares disponíveis."
+        title={canManage ? "Livros" : "Catálogo"}
+        description={
+          canManage
+            ? "Acervo da biblioteca e exemplares disponíveis."
+            : "Consulte os livros e os exemplares disponíveis. Os empréstimos são feitos no balcão."
+        }
         meta={catalog.data && catalog.data.length > 0 ? <CatalogSummary books={catalog.data} /> : undefined}
-        action={<Button onClick={openCreate}>Novo livro</Button>}
+        action={canManage ? <Button onClick={openCreate}>Novo livro</Button> : undefined}
       />
 
       <div className="rounded-md border bg-card">
@@ -129,9 +136,11 @@ export function BooksPage() {
               icon={BookOpen}
               title="Nenhum livro cadastrado."
               action={
-                <Button variant="outline" size="sm" onClick={openCreate}>
-                  Cadastrar livro
-                </Button>
+                canManage ? (
+                  <Button variant="outline" size="sm" onClick={openCreate}>
+                    Cadastrar livro
+                  </Button>
+                ) : undefined
               }
             />
           )
@@ -143,9 +152,11 @@ export function BooksPage() {
                 <TableHead className="hidden md:table-cell">Categoria</TableHead>
                 <TableHead className="hidden md:table-cell">ISBN</TableHead>
                 <TableHead className="w-36 md:w-44">Disponibilidade</TableHead>
-                <TableHead className="w-0">
-                  <span className="sr-only">Ações</span>
-                </TableHead>
+                {canManage && (
+                  <TableHead className="w-0">
+                    <span className="sr-only">Ações</span>
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -174,18 +185,20 @@ export function BooksPage() {
                         label={`${book.availableCopies} de ${book.totalCopies} exemplares disponíveis`}
                       />
                     </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1 opacity-70 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
-                        <Button variant="ghost" size="icon-sm" title="Editar" onClick={() => openEdit(book)}>
-                          <Pencil />
-                          <span className="sr-only">Editar {book.title}</span>
-                        </Button>
-                        <Button variant="ghost" size="icon-sm" title="Remover" onClick={() => setDeletingBook(book)}>
-                          <Trash2 />
-                          <span className="sr-only">Remover {book.title}</span>
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {canManage && (
+                      <TableCell>
+                        <div className="flex justify-end gap-1 opacity-70 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+                          <Button variant="ghost" size="icon-sm" title="Editar" onClick={() => openEdit(book)}>
+                            <Pencil />
+                            <span className="sr-only">Editar {book.title}</span>
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" title="Remover" onClick={() => setDeletingBook(book)}>
+                            <Trash2 />
+                            <span className="sr-only">Remover {book.title}</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 )
               })}
@@ -194,8 +207,12 @@ export function BooksPage() {
         )}
       </div>
 
-      <BookFormDialog open={formOpen} onOpenChange={setFormOpen} book={editingBook} />
-      <DeleteBookDialog book={deletingBook} onOpenChange={(open) => !open && setDeletingBook(null)} />
+      {canManage && (
+        <>
+          <BookFormDialog open={formOpen} onOpenChange={setFormOpen} book={editingBook} />
+          <DeleteBookDialog book={deletingBook} onOpenChange={(open) => !open && setDeletingBook(null)} />
+        </>
+      )}
     </>
   )
 }

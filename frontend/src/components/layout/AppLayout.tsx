@@ -1,25 +1,42 @@
 import { useState } from "react"
 import { NavLink, Outlet } from "react-router"
-import { ArrowLeftRight, BookOpen, Library, Menu, Users } from "lucide-react"
+import { ArrowLeftRight, BookOpen, Library, LogOut, Menu, UserRound, Users } from "lucide-react"
 
+import { Monogram } from "@/components/Monogram"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
+import { useAuth, useCurrentUser } from "@/hooks/useAuth"
+import { roleLabels, userTypeLabels } from "@/lib/labels"
 import { cn } from "@/lib/utils"
+import type { Role } from "@/types/user"
 
-const navItems = [
-  { to: "/livros", label: "Livros", icon: BookOpen },
-  { to: "/usuarios", label: "Usuários", icon: Users },
-  { to: "/emprestimos", label: "Empréstimos", icon: ArrowLeftRight },
-]
+const navByRole: Record<Role, { section: string; items: { to: string; label: string; icon: typeof BookOpen }[] }> = {
+  LIBRARIAN: {
+    section: "Balcão",
+    items: [
+      { to: "/livros", label: "Livros", icon: BookOpen },
+      { to: "/usuarios", label: "Usuários", icon: Users },
+      { to: "/emprestimos", label: "Empréstimos", icon: ArrowLeftRight },
+    ],
+  },
+  MEMBER: {
+    section: "Biblioteca",
+    items: [
+      { to: "/livros", label: "Catálogo", icon: BookOpen },
+      { to: "/minha-conta", label: "Minha conta", icon: UserRound },
+    ],
+  },
+}
 
 const APP_NAME = "Biblioteca Universitária"
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { section, items } = navByRole[useCurrentUser().role]
   return (
     <nav aria-label="Principal" className="flex flex-col gap-0.5 px-3">
-      <p className="px-2.5 pb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Balcão</p>
-      {navItems.map(({ to, label, icon: Icon }) => (
+      <p className="px-2.5 pb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{section}</p>
+      {items.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -58,9 +75,23 @@ function Brand() {
 }
 
 function SidebarFooter() {
+  const user = useCurrentUser()
+  const { logout } = useAuth()
   return (
     <div className="mt-auto border-t px-3 py-4">
-      <p className="px-0.5 pb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Tema</p>
+      <div className="mb-4 flex items-center gap-2.5 px-0.5">
+        <Monogram name={user.name} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-medium">{user.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {user.type ? userTypeLabels[user.type] : roleLabels[user.role]}
+          </p>
+        </div>
+        <Button variant="ghost" size="icon-sm" title="Sair" onClick={logout}>
+          <LogOut />
+          <span className="sr-only">Sair</span>
+        </Button>
+      </div>
       <ThemeToggle />
     </div>
   )

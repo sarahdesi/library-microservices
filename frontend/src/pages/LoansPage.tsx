@@ -108,7 +108,7 @@ export function LoansPage() {
     <>
       <PageHeader title="Empréstimos" description="Registre empréstimos e consulte os empréstimos de cada usuário." />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="rounded-md border bg-card p-5">
           <h2 className="mb-1 text-[15px] font-medium">Novo empréstimo</h2>
           <p className="mb-5 text-[13px] text-muted-foreground">Só aparecem livros com exemplar disponível.</p>

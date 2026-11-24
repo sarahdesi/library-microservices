@@ -1,12 +1,13 @@
 import type { ReactNode } from "react"
 import { useParams } from "react-router"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { BookMarked, Receipt } from "lucide-react"
 
-import { getUserFines, payFine } from "@/api/fines"
+import { getUserFines } from "@/api/fines"
 import { getUserLoans, getUserPending } from "@/api/loans"
 import { getUser } from "@/api/users"
 import { EmptyState } from "@/components/EmptyState"
+import { FinesTable } from "@/components/fines/FinesTable"
 import { PageHeader } from "@/components/layout/PageHeader"
 import { LoansTable } from "@/components/loans/LoansTable"
 import { Meter } from "@/components/Meter"
@@ -15,17 +16,13 @@ import { Notice } from "@/components/Notice"
 import { ErrorState } from "@/components/QueryState"
 import { TableSkeleton } from "@/components/TableSkeleton"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useBooksById } from "@/hooks/useBooksById"
 import { formatCurrency, plural } from "@/lib/format"
 import { roleLabels, userTypeLabels } from "@/lib/labels"
 import { queryKeys } from "@/lib/queryKeys"
 import { FINE_PER_DAY, userTypeRules } from "@/lib/rules"
-import { showError, showSuccess } from "@/lib/toast"
-import type { Fine } from "@/types/fine"
 import type { Loan } from "@/types/loan"
 import { isMember, type Member } from "@/types/user"
 
@@ -75,7 +72,7 @@ export function UserDetailPage() {
         <Skeleton className="mb-4 h-3 w-40" />
         <Skeleton className="mb-2 h-6 w-64" />
         <Skeleton className="mb-10 h-3 w-48" />
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <Skeleton className="h-72" />
           <Skeleton className="h-72" />
         </div>
@@ -148,7 +145,7 @@ function MemberDetail({ member }: { member: Member }) {
         </div>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         {/* Library card */}
         <aside className="rounded-md border bg-card">
           <div className="flex items-center gap-3 border-b p-5">
@@ -231,6 +228,7 @@ function MemberDetail({ member }: { member: Member }) {
                 <EmptyState icon={Receipt} title="Nenhuma multa registrada." />
               ) : (
                 <FinesTable
+                  canPay
                   fines={fines}
                   bookTitleForLoan={(loanId) => {
                     const loan = loansById.get(loanId)
@@ -248,71 +246,5 @@ function MemberDetail({ member }: { member: Member }) {
         </Tabs>
       </div>
     </>
-  )
-}
-
-type FinesTableProps = {
-  fines: Fine[]
-  bookTitleForLoan: (loanId: number) => string | undefined
-}
-
-function FinesTable({ fines, bookTitleForLoan }: FinesTableProps) {
-  const queryClient = useQueryClient()
-
-  const payMutation = useMutation({
-    mutationFn: (fine: Fine) => payFine(fine.id),
-    onSuccess: (paid) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.userFines(paid.userId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.userPending(paid.userId) })
-      showSuccess("Multa paga.")
-    },
-    onError: showError,
-  })
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <TableHead>Livro</TableHead>
-          <TableHead className="text-right">Dias de atraso</TableHead>
-          <TableHead className="text-right">Valor</TableHead>
-          <TableHead>Situação</TableHead>
-          <TableHead className="w-0">
-            <span className="sr-only">Ações</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {fines.map((fine) => {
-          const title = bookTitleForLoan(fine.loanId)
-          return (
-            <TableRow key={fine.id}>
-              <TableCell className="whitespace-normal">
-                {title ?? <span className="text-muted-foreground">Empréstimo nº {fine.loanId}</span>}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">{fine.daysLate}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(fine.amount)}</TableCell>
-              <TableCell>
-                <Badge variant={fine.paid ? "success" : "warning"}>{fine.paid ? "Paga" : "Pendente"}</Badge>
-              </TableCell>
-              <TableCell>
-                {!fine.paid && (
-                  <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={payMutation.isPending && payMutation.variables?.id === fine.id}
-                      onClick={() => payMutation.mutate(fine)}
-                    >
-                      Pagar
-                    </Button>
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          )
-        })}
-      </TableBody>
-    </Table>
   )
 }
