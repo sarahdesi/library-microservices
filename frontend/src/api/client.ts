@@ -1,4 +1,13 @@
+import { readSession } from "@/lib/session"
+
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "")
+
+/** Called when a request that carried a token gets 401 (expired or invalid session) */
+let unauthorizedHandler: (() => void) | null = null
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
 
 /** HTTP error response from the gateway or one of the services */
 export class ApiError extends Error {
@@ -24,6 +33,8 @@ export class NetworkError extends Error {
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE"
   body?: unknown
+  /** false for login and public registration: no token is sent */
+  auth?: boolean
 }
 
 async function parseError(response: Response): Promise<ApiError> {
@@ -48,12 +59,17 @@ async function parseError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, response.statusText)
 }
 
-export async function request<T>(path: string, { method = "GET", body }: RequestOptions = {}): Promise<T> {
+export async function request<T>(path: string, { method = "GET", body, auth = true }: RequestOptions = {}): Promise<T> {
+  const token = auth ? readSession()?.token : undefined
+  const headers: Record<string, string> = {}
+  if (body !== undefined) headers["Content-Type"] = "application/json"
+  if (token) headers.Authorization = `Bearer ${token}`
+
   let response: Response
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
@@ -61,7 +77,12 @@ export async function request<T>(path: string, { method = "GET", body }: Request
   }
 
   if (!response.ok) {
-    throw await parseError(response)
+    const error = await parseError(response)
+    // Decided by the status, not the text (the gateway answers 401 itself)
+    if (response.status === 401 && token) {
+      unauthorizedHandler?.()
+    }
+    throw error
   }
 
   if (response.status === 204) {

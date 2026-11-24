@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Theme is chosen by the user (light, dark or system): the .dark class on <html> drives dark: */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-heading: "Source Serif 4", ui-serif, Georgia, serif;
@@ -33,6 +36,9 @@
   --color-warning-bg: var(--warning-bg);
   --color-danger: var(--danger);
   --color-danger-bg: var(--danger-bg);
+
+  --color-skeleton: var(--skeleton);
+  --color-meter-track: var(--meter-track);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -94,6 +100,59 @@
   --sidebar-accent-foreground: #1c1917;
   --sidebar-border: #e7e5e4;
   --sidebar-ring: #2f5d50;
+
+  /* Skeletons and meters */
+  --skeleton: #efeeec;
+  --meter-track: #ecebe9;
+
+  color-scheme: light;
+}
+
+/* Dark: the same library card, inverted. Warm stone, never pure black. */
+.dark {
+  --background: #161514;
+  --foreground: #eceae7;
+  --card: #1e1c1a;
+  --card-foreground: #eceae7;
+  --popover: #1e1c1a;
+  --popover-foreground: #eceae7;
+
+  --primary: #4f8f7b;
+  --primary-hover: #5c9e89;
+  --primary-foreground: #0f1714;
+
+  --secondary: #262422;
+  --secondary-foreground: #eceae7;
+  --muted: #262422;
+  --muted-foreground: #a39d97;
+  --accent: #262422;
+  --accent-foreground: #eceae7;
+
+  --destructive: #e38c8c;
+  --border: #302d2a;
+  --input: #3a3633;
+  --ring: #4f8f7b;
+
+  --success: #8dc29c;
+  --success-bg: #1d2a21;
+  --warning: #dda75e;
+  --warning-bg: #2d2418;
+  --danger: #e38c8c;
+  --danger-bg: #2f1d1d;
+
+  --sidebar: #1a1917;
+  --sidebar-foreground: #eceae7;
+  --sidebar-primary: #4f8f7b;
+  --sidebar-primary-foreground: #0f1714;
+  --sidebar-accent: #262422;
+  --sidebar-accent-foreground: #eceae7;
+  --sidebar-border: #302d2a;
+  --sidebar-ring: #4f8f7b;
+
+  --skeleton: #292725;
+  --meter-track: #2e2b28;
+
+  color-scheme: dark;
 }
 
 @layer base {
@@ -105,5 +164,26 @@
   }
   body {
     @apply bg-background text-sm text-foreground;
+  }
+  /* Short color transition when switching themes (no layout animation) */
+  body,
+  aside,
+  header {
+    transition:
+      background-color 150ms ease,
+      color 150ms ease,
+      border-color 150ms ease;
+  }
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 25%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
   }
 }

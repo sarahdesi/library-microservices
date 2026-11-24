@@ -12,7 +12,7 @@ type FormFieldProps = {
 
 export function FormField({ id, label, error, hint, children }: FormFieldProps) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid content-start gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
       {error ? (

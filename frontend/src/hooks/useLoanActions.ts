@@ -14,6 +14,7 @@ export function useLoanActions() {
   const refresh = (userId: number) => {
     queryClient.invalidateQueries({ queryKey: ["loans"] })
     queryClient.invalidateQueries({ queryKey: queryKeys.userFines(userId) })
+    queryClient.invalidateQueries({ queryKey: queryKeys.myFines })
     queryClient.invalidateQueries({ queryKey: queryKeys.books })
   }
 
